@@ -1,0 +1,54 @@
+sonarr:
+  server:
+    address: 192.168.1.242
+    port: 8989
+  config:
+    host:
+      analyticsEnabled: false
+    ui:
+      firstDayOfWeek: 1
+      timeFormat: HH:mm
+  rootfolder:
+    - name: TV
+      path: /tv
+      defaultTags: []
+      defaultQualityProfileId: 1
+      defaultMetadataProfileId: 1
+  downloadclient:
+    - name: Transmission
+      enable: true
+      protocol: torrent
+      fields:
+        - name: host
+          value: 192.168.1.242
+        - name: port
+          value: 9091
+      implementation: Transmission
+      configContract: TransmissionSettings
+radarr:
+  server:
+    address: 192.168.1.242
+    port: 8989
+  config:
+    host:
+      analyticsEnabled: false
+    ui:
+      firstDayOfWeek: 1
+      timeFormat: HH:mm
+  rootfolder:
+    - name: Movies
+      path: /movies
+      defaultTags: []
+      defaultQualityProfileId: 1
+      defaultMetadataProfileId: 1
+  downloadclient:
+    - name: Transmission
+      enable: true
+      protocol: torrent
+      fields:
+        - name: host
+          value: 192.168.1.242
+        - name: port
+          value: 9091
+      implementation: Transmission
+      configContract: TransmissionSettings
