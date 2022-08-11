@@ -48,7 +48,7 @@ sudo docker-compose up -d
 
 6. Configure Heimdal
 
-Go to http://localhost:80 and add the following apps, replace localhost with your local IP if needed.
+Go to http://localhost:8888 and add the following apps, replace localhost with your local IP if needed.
   - Transmission: `http://localhost:9091`
   - Radarr: `http://localhost:7878`
   - Sonarr: `http://localhost:8989`
