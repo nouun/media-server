@@ -2,11 +2,13 @@
 
 ## Containers
 
-- Jellyfin - Media Server
 - Sonarr - TV Downloader
 - Radarr - Movie Downloader
-- Deluge - Torrent Client
+- Flemmarr - Automatic \*arr configuration
+- Transmission - Torrent Client
 - Jackett - Indexer Proxy for Radarr and Sonarr
+- FlareSolver - Cloudflare bypass for Jackett
+- Jellyfin - Media Server
 
 ## Setup
 
