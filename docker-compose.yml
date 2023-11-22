@@ -3,19 +3,35 @@ services:
   # Media player
   jellyfin:
     container_name: jellyfin
-    image: jellyfin/jellyfin
+    image: ghcr.io/confusedpolarbear/jellyfin-intro-skipper
     restart: unless-stopped
-    ports:
-      - 8096:8096
     volumes:
       - ./config/jellyfin/config:/config
       - ./config/jellyfin/cache:/cache
-      - ${TVDIR}:/media/tv
-      - ${MOVIESDIR}:/media/movies
+      - ${ANIME_DIR}:/media/anime
       - /etc/localtime:/etc/localtime:ro
     user: 1000:1000
+    ports:
+      - 8096:8096
+    labels:
+      - "traefik.http.routers.jelly.rule=Host(`jelly.${DOMAIN}`)"
 
   # Downloading
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
+      - "TZ=${TZ}"
+    volumes:
+      - ./config/prowlarr:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+    labels:
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)"
+
   sonarr:
     container_name: sonarr
     image: lscr.io/linuxserver/sonarr:latest
@@ -23,101 +39,82 @@ services:
     ports:
       - 8989:8989
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
+      - "TZ=${TZ}"
     volumes:
-      - ./config/sonarr:/config
-      - ${DLDIR}:/downloads
-      - ${TVDIR}:/tv
-      - /etc/localtime:/etc/localtime:ro
+      - "./config/sonarr:/config"
+      - "${DOWNLOAD_DIR}:/downloads"
+      - "${ANIME_DIR}:/anime"
+      - "/etc/localtime:/etc/localtime:ro"
     depends_on:
-      - jackett
-      - transmission
-  radarr:
-    container_name: radarr
-    image: lscr.io/linuxserver/radarr:latest
-    restart: unless-stopped
-    ports:
-      - 7878:7878
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - ./config/radarr:/config
-      - ${DLDIR}:/downloads
-      - ${MOVIESDIR}:/movies
-      - /etc/localtime:/etc/localtime:ro
-    depends_on:
-      - jackett
-      - transmission
+      - prowlarr
+      - deluge 
+    labels:
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)"
 
-  transmission:
-    container_name: transmission
-    image: lscr.io/linuxserver/transmission:latest
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - UMASK_SET=022
-      - TZ=Europe/Stockholm
-    volumes:
-      - ./config/transmission:/config
-      - ${DLDIR}:/downloads
+  deluge:
+    image: linuxserver/deluge
+    container_name: deluge
     ports:
-      - 9091:9091
-      - 51413:51413
-      - 51413:51413/udp
-    restart: unless-stopped
-
-  # Indexer
-  jackett:
-    image: ghcr.io/linuxserver/jackett:latest
-    container_name: jackett
-    restart: unless-stopped
-    ports:
-      - 9117:9117
+      - 8112:8112
+      - 8118:8118
+      - 58846:58846
+      - 58946:58946
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
+      - "TZ=${TZ}"
     volumes:
-      - ./config/jackett:/config
-      - ${DLDIR}:/downloads
+      - "${DOWNLOAD_DIR}:/downloads"
+      - ./config/deluge:/config
       - /etc/localtime:/etc/localtime:ro
-  flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
-    container_name: flaresolverr
-    environment:
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - LOG_HTML=${LOG_HTML:-false}
-      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
-      - TZ=${TZ}
-    ports:
-      - 8191:8191
-    depends_on:
-      - jackett
     restart: unless-stopped
+    labels:
+      - "traefik.http.routers.deluge.rule=Host(`deluge.${DOMAIN}`)"
+
+  # Organising
+  shoko_server:
+    shm_size: 256m
+    container_name: shokoserver
+    image: shokoanime/server:latest
+    restart: always
+    environment:
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
+      - "TZ=${TZ}"
+    ports:
+      - "8111:8111"
+    volumes:
+      - "./config/shoko:/home/shoko/.shoko"
+      - "${ANIME_DIR}:/mnt/anime"
+      - "${DOWNLOAD_DIR}/complete:/mnt/import"
+    labels:
+      - "traefik.http.routers.shoko.rule=Host(`shoko.${DOMAIN}`)"
 
   # AIO
   heimdall:
     image: ghcr.io/linuxserver/heimdall:latest
     container_name: heimdall
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
+      - "TZ=${TZ}"
     volumes:
-      - ./config/heimdall:/config
+      - "./config/heimdall:/config"
     ports:
-      - 8888:80
+      - "8888:80"
     restart: unless-stopped
+    labels:
+      - "traefik.http.routers.heimdall.rule=Host(`${DOMAIN}`,`${IP}`)"
 
-  flemmarr:
-    container_name: flemmarr
-    build: https://github.com/nouun/flemmarr.git
-    depends_on:
-      - radarr
-      - sonarr
+  traefik:
+    image: traefik:v2.0 # The official v2.0 Traefik docker image
+    container_name: traefik
+    command: --api --providers.docker # Enables the web UI and tells Traefik to listen to docker
+    ports:
+      - "80:80" # The HTTP port
+      - "9090:8080" # The Web UI (enabled by --api)
     volumes:
-      - "./config/flemmarr:/config"
+      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
 

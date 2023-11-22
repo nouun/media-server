@@ -1,7 +1,2 @@
 /.env
-/config/jackett
-/config/radarr
-/config/sonarr
-/config/transmission
-/config/jellyfin
-/config/heimdall
+/config

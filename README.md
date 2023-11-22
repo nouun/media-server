@@ -2,17 +2,16 @@
 
 ## Containers
 
-- Sonarr - TV Downloader
-- Radarr - Movie Downloader
-- Flemmarr - Automatic \*arr configuration
+- Sonarr - Anime Downloader
 - Transmission - Torrent Client
-- Jackett - Indexer Proxy for Radarr and Sonarr
-- FlareSolver - Cloudflare bypass for Jackett
+- Prowlarr - Indexer Proxy for Sonarr
 - Jellyfin - Media Server
+- Heimdall - Application dashboard
+- Shoko - Anime organization
 
 ## Setup
 
-All references to `localhost` can be replaced with your local IP address (e.g. `192.168.1.242` for me)
+All references to `localhost` may need to be replaced with your local IP address (e.g. `192.168.1.242`)
 
 1. Clone repo
 
@@ -30,23 +29,28 @@ source .env
 
 3. Create directories
 ```bash
-mkdir -p config/jellyfin/cache config/jellyfin/config \
-         ${DLDIR}/completed ${DLDIR}/incomplete       \
-         ${MOVIESDIR} ${TVDIR}
+mkdir -p ./config                   \
+         ./config/jellyfin          \
+         ./config/jellyfin/cache    \
+         ./config/jellyfin/confi    \
+         ./config/shoko             \
+         ./config/deluge            \
+         ./config/heimdall          \
+         ./config/sonarr            \
+         ./config/prowlarr          \
+         ${DOWNLOAD_DIR}/complete   \
+         ${DOWNLOAD_DIR}/incomplete \
+         ${DOWNLOAD_DIR}/torrents   \
+         ${ANIME_DIR}    
 ```
 
-4. Edit Flemmarr
-
-Edit `config/flemmarr/config.yml` and replace `192.168.1.242` with `localhost` or your local IP.
-
-
-5. Create Docker containers
+4. Create Docker containers
 
 ```bash
 sudo docker-compose up -d
 ```
 
-6. Configure Heimdal
+5. Configure Heimdal
 
 Go to http://localhost:8888 and add the following apps, replace localhost with your local IP if needed.
   - Transmission: `http://localhost:9091`
@@ -54,23 +58,23 @@ Go to http://localhost:8888 and add the following apps, replace localhost with y
   - Sonarr: `http://localhost:8989`
   - Jackett: `http://localhost:9117`
   - Jellyfin: `http://localhost:8096`
+  - Shoko: `http://localhost:8111`
 
-7. Configure Transmission
+6. Configure Transmission
 
 ```bash
 SESSION_HEADER=$(curl --silent http://localhost:9091/transmission/rpc/ | sed 's/.*<code>//g;s/<\/code>.*//g')
 curl --silent --header "$SESSION_HEADER" "http://localhost:9091/transmission/rpc" -d "{\"method\":\"session-set\",\"arguments\": {\"download-dir\":\"/downloads\"}}"
 ```
 
-8. Configure Jackett, Radarr, and Sonarr
+7. Configure Prowlarr and Sonarr
 
-Go to https://localhost:9117, scroll to the bottom and set "FlareSolverr API URL:" to `http://localhost:8191`. Follow the instruction on Jackett to add indexers to Sonarr and Radarr. Most other Sonarr and Radarr settings will be preset through Flemmarr.
+Follow the instruction on Prowlarr to add indexers to Sonarr.
 
-9. Configure Jellyfin
+8. Configure Jellyfin
 
 Go to https://localhost:8096 and run through the setup wizard, when prompted to add media locations add the following:
- - Movies: `/media/movies`
- - Shows: `/media/tv`
+ - Shows: `/media/anime`
 
 ## Updating
 
